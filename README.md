@@ -74,4 +74,10 @@ docker compose ps
 
 PostgreSQL is exposed on `localhost:5432` (database `raksha`, user `raksha`). Redis is exposed on `localhost:6379`.
 
-The existing Vite client lives in `client/` and is unchanged in this change set. The Express API and FastAPI service will be added in later foundation steps.
+The existing Vite client lives in `client/` and remains unchanged. The Express API currently includes authentication, emergency requests, resource management, responder profiles, skills, vehicles, availability, verification, rule-based candidate discovery, and responder assignment lifecycle APIs.
+
+## Phase 5 responder management
+
+Responder operations are exposed under `/api/responders`, `/api/responder-skills`, `/api/emergency-requests/:emergencyRequestId/responders`, `/api/emergency-requests/:emergencyRequestId/responder-candidates`, and `/api/responder-assignments`.
+
+Assignments follow `ASSIGNED -> ACCEPTED -> IN_PROGRESS -> COMPLETED`, with cancellation preserving assignment history. Coordinators and admins assign, verify, and manage operational data; volunteers and responders manage their own profile data and assigned work; citizens cannot perform responder operations.

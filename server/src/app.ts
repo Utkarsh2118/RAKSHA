@@ -10,6 +10,8 @@ import { authRouter } from './modules/auth/auth.routes.js';
 import { emergencyRouter } from './modules/emergency/emergency.routes.js';
 import { resourceRouter } from './modules/resource/resource.routes.js';
 import { resourceAllocationRouter } from './modules/resource-allocation/resource-allocation.routes.js';
+import { responderRouter, responderSkillRouter } from './modules/responder/responder.routes.js';
+import { responderAssignmentRouter } from './modules/responder-assignment/responder-assignment.routes.js';
 
 export function createApp() {
   const app = express();
@@ -24,6 +26,9 @@ export function createApp() {
   app.use('/api/emergency-requests', emergencyRouter);
   app.use('/api/resources', resourceRouter);
   app.use('/api/resource-allocations', resourceAllocationRouter);
+  app.use('/api/responders', responderRouter);
+  app.use('/api/responder-skills', responderSkillRouter);
+  app.use('/api/responder-assignments', responderAssignmentRouter);
 
   app.use(notFound);
   app.use(errorHandler);

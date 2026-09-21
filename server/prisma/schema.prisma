@@ -26,6 +26,14 @@ enum EmergencyType {
   OTHER
 }
 
+enum ResponderAssignmentStatus {
+  ASSIGNED
+  ACCEPTED
+  IN_PROGRESS
+  COMPLETED
+  CANCELLED
+}
+
 enum Severity {
   LOW
   MEDIUM
@@ -69,18 +77,101 @@ enum ResourceAllocationStatus {
   CANCELLED
 }
 
+enum AvailabilityStatus {
+  AVAILABLE
+  BUSY
+  OFFLINE
+  UNAVAILABLE
+}
+
+enum VehicleType {
+  MOTORCYCLE
+  CAR
+  VAN
+  AMBULANCE
+  TRUCK
+  BOAT
+  OTHER
+}
+
 model User {
-  id                        String             @id @default(uuid()) @db.Uuid
-  name                      String
-  email                     String             @unique
-  passwordHash              String
-  role                      Role               @default(CITIZEN)
-  isActive                  Boolean            @default(true)
-  createdAt                 DateTime           @default(now())
-  updatedAt                 DateTime           @updatedAt
-  emergencyRequests         EmergencyRequest[] @relation("UserEmergencyRequests")
-  assignedEmergencyRequests EmergencyRequest[] @relation("AssignedResponderEmergencyRequests")
-  resources                 Resource[]         @relation("UserResources")
+  id                           String                @id @default(uuid()) @db.Uuid
+  name                         String
+  email                        String                @unique
+  passwordHash                 String
+  role                         Role                  @default(CITIZEN)
+  isActive                     Boolean               @default(true)
+  createdAt                    DateTime              @default(now())
+  updatedAt                    DateTime              @updatedAt
+  emergencyRequests            EmergencyRequest[]    @relation("UserEmergencyRequests")
+  assignedEmergencyRequests    EmergencyRequest[]    @relation("AssignedResponderEmergencyRequests")
+  resources                    Resource[]            @relation("UserResources")
+  responderProfile             ResponderProfile?
+  assignedResponderAssignments ResponderAssignment[] @relation("ResponderAssignmentAssignedBy")
+}
+
+model ResponderProfile {
+  id                 String             @id @default(uuid()) @db.Uuid
+  userId             String             @unique @db.Uuid
+  phone              String?
+  organization       String?
+  designation        String?
+  bio                String?
+  availabilityStatus AvailabilityStatus @default(OFFLINE)
+  latitude           Float?
+  longitude          Float?
+  locationText       String?
+  isVerified         Boolean            @default(false)
+  createdAt          DateTime           @default(now())
+  updatedAt          DateTime           @updatedAt
+
+  user        User                    @relation(fields: [userId], references: [id])
+  skills      ResponderProfileSkill[]
+  vehicles    ResponderVehicle[]
+  assignments ResponderAssignment[]
+
+  @@index([availabilityStatus])
+  @@index([isVerified])
+}
+
+model ResponderSkill {
+  id          String   @id @default(uuid()) @db.Uuid
+  name        String   @unique
+  description String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  profiles ResponderProfileSkill[]
+}
+
+model ResponderProfileSkill {
+  profileId String   @db.Uuid
+  skillId   String   @db.Uuid
+  createdAt DateTime @default(now())
+
+  profile ResponderProfile @relation(fields: [profileId], references: [id])
+  skill   ResponderSkill   @relation(fields: [skillId], references: [id])
+
+  @@id([profileId, skillId])
+  @@index([profileId])
+  @@index([skillId])
+}
+
+model ResponderVehicle {
+  id            String      @id @default(uuid()) @db.Uuid
+  profileId     String      @db.Uuid
+  vehicleType   VehicleType
+  vehicleNumber String?
+  capacity      Int
+  isAvailable   Boolean     @default(true)
+  createdAt     DateTime    @default(now())
+  updatedAt     DateTime    @updatedAt
+
+  profile ResponderProfile @relation(fields: [profileId], references: [id])
+
+  @@index([profileId])
+  @@index([isAvailable])
+  @@index([vehicleType])
 }
 
 model EmergencyRequest {
@@ -100,9 +191,10 @@ model EmergencyRequest {
   createdAt           DateTime        @default(now())
   updatedAt           DateTime        @updatedAt
 
-  reporter            User                 @relation("UserEmergencyRequests", fields: [reporterId], references: [id])
-  assignedResponder   User?                @relation("AssignedResponderEmergencyRequests", fields: [assignedResponderId], references: [id])
-  resourceAllocations ResourceAllocation[]
+  reporter             User                  @relation("UserEmergencyRequests", fields: [reporterId], references: [id])
+  assignedResponder    User?                 @relation("AssignedResponderEmergencyRequests", fields: [assignedResponderId], references: [id])
+  resourceAllocations  ResourceAllocation[]
+  responderAssignments ResponderAssignment[]
 
   @@index([reporterId])
   @@index([assignedResponderId])
@@ -152,6 +244,31 @@ model ResourceAllocation {
 
   @@index([resourceId])
   @@index([emergencyRequestId])
+  @@index([status])
+  @@index([createdAt])
+}
+
+model ResponderAssignment {
+  id                 String                    @id @default(uuid()) @db.Uuid
+  emergencyRequestId String                    @db.Uuid
+  responderProfileId String                    @db.Uuid
+  assignedById       String                    @db.Uuid
+  status             ResponderAssignmentStatus @default(ASSIGNED)
+  assignedAt         DateTime                  @default(now())
+  acceptedAt         DateTime?
+  startedAt          DateTime?
+  completedAt        DateTime?
+  cancelledAt        DateTime?
+  createdAt          DateTime                  @default(now())
+  updatedAt          DateTime                  @updatedAt
+
+  emergencyRequest EmergencyRequest @relation(fields: [emergencyRequestId], references: [id])
+  responderProfile ResponderProfile @relation(fields: [responderProfileId], references: [id])
+  assignedBy       User             @relation("ResponderAssignmentAssignedBy", fields: [assignedById], references: [id])
+
+  @@index([emergencyRequestId])
+  @@index([responderProfileId])
+  @@index([assignedById])
   @@index([status])
   @@index([createdAt])
 }
