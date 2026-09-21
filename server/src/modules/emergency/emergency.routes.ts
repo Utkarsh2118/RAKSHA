@@ -12,6 +12,7 @@ import {
   unassignRequest,
   updateRequestStatus,
 } from './emergency.controller.js';
+import { getEmergencyAllocationRecords } from '../resource-allocation/resource-allocation.controller.js';
 
 export const emergencyRouter = Router();
 
@@ -20,6 +21,7 @@ emergencyRouter.get('/me', authenticate, getMyRequests);
 emergencyRouter.get('/', authenticate, authorize('COORDINATOR', 'RESPONDER', 'ADMIN'), listRequests);
 emergencyRouter.get('/stats/summary', authenticate, authorize('COORDINATOR', 'ADMIN'), getOperationalSummary);
 emergencyRouter.get('/priority', authenticate, authorize('COORDINATOR', 'ADMIN'), getPriorityQueue);
+emergencyRouter.get('/:emergencyRequestId/resources', authenticate, authorize('COORDINATOR', 'ADMIN', 'RESPONDER'), getEmergencyAllocationRecords);
 emergencyRouter.get('/:id', authenticate, getRequestById);
 emergencyRouter.patch('/:id/status', authenticate, authorize('COORDINATOR', 'RESPONDER', 'ADMIN'), updateRequestStatus);
 emergencyRouter.patch('/:id/assign', authenticate, authorize('COORDINATOR', 'ADMIN'), assignRequest);

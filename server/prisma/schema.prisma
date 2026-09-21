@@ -42,6 +42,33 @@ enum EmergencyStatus {
   CANCELLED
 }
 
+enum ResourceType {
+  FOOD
+  WATER
+  MEDICINE
+  BLANKET
+  TENT
+  CLOTHING
+  FIRST_AID
+  VEHICLE
+  RESCUE_EQUIPMENT
+  POWER_SUPPLY
+  OTHER
+}
+
+enum ResourceStatus {
+  AVAILABLE
+  LOW_STOCK
+  OUT_OF_STOCK
+  UNAVAILABLE
+}
+
+enum ResourceAllocationStatus {
+  ALLOCATED
+  RELEASED
+  CANCELLED
+}
+
 model User {
   id                        String             @id @default(uuid()) @db.Uuid
   name                      String
@@ -53,6 +80,7 @@ model User {
   updatedAt                 DateTime           @updatedAt
   emergencyRequests         EmergencyRequest[] @relation("UserEmergencyRequests")
   assignedEmergencyRequests EmergencyRequest[] @relation("AssignedResponderEmergencyRequests")
+  resources                 Resource[]         @relation("UserResources")
 }
 
 model EmergencyRequest {
@@ -72,12 +100,58 @@ model EmergencyRequest {
   createdAt           DateTime        @default(now())
   updatedAt           DateTime        @updatedAt
 
-  reporter          User  @relation("UserEmergencyRequests", fields: [reporterId], references: [id])
-  assignedResponder User? @relation("AssignedResponderEmergencyRequests", fields: [assignedResponderId], references: [id])
+  reporter            User                 @relation("UserEmergencyRequests", fields: [reporterId], references: [id])
+  assignedResponder   User?                @relation("AssignedResponderEmergencyRequests", fields: [assignedResponderId], references: [id])
+  resourceAllocations ResourceAllocation[]
 
   @@index([reporterId])
   @@index([assignedResponderId])
   @@index([status])
   @@index([severity])
+  @@index([createdAt])
+}
+
+model Resource {
+  id                String         @id @default(uuid()) @db.Uuid
+  ownerId           String         @db.Uuid
+  name              String
+  type              ResourceType
+  description       String?
+  quantity          Int
+  availableQuantity Int
+  unit              String
+  status            ResourceStatus @default(AVAILABLE)
+  locationText      String?
+  latitude          Float?
+  longitude         Float?
+  createdAt         DateTime       @default(now())
+  updatedAt         DateTime       @updatedAt
+
+  owner       User                 @relation("UserResources", fields: [ownerId], references: [id])
+  allocations ResourceAllocation[]
+
+  @@index([ownerId])
+  @@index([type])
+  @@index([status])
+  @@index([createdAt])
+}
+
+model ResourceAllocation {
+  id                 String                   @id @default(uuid()) @db.Uuid
+  resourceId         String                   @db.Uuid
+  emergencyRequestId String                   @db.Uuid
+  quantity           Int
+  status             ResourceAllocationStatus @default(ALLOCATED)
+  allocatedAt        DateTime                 @default(now())
+  releasedAt         DateTime?
+  createdAt          DateTime                 @default(now())
+  updatedAt          DateTime                 @updatedAt
+
+  resource         Resource         @relation(fields: [resourceId], references: [id])
+  emergencyRequest EmergencyRequest @relation(fields: [emergencyRequestId], references: [id])
+
+  @@index([resourceId])
+  @@index([emergencyRequestId])
+  @@index([status])
   @@index([createdAt])
 }
